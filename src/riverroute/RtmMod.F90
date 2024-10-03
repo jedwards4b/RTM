@@ -326,6 +326,10 @@ contains
     ! Intiialize RTM pio
     call ncd_pio_init()
 
+    ! Initialize time manager
+
+    call timemgr_init(dtime_in=rtm_tstep)
+
     ! Obtain restart file if appropriate
     if ((nsrest == nsrStartup .and. finidat_rtm /= ' ') .or. &
         (nsrest == nsrContinue) .or. &
@@ -333,12 +337,6 @@ contains
            call RtmRestGetfile( file=fnamer, path=pnamer )
     endif
 
-    ! Initialize time manager
-    if (nsrest == nsrStartup) then
-       call timemgr_init(dtime_in=rtm_tstep)
-    else
-       call RtmRestTimeManager(file=fnamer)
-    end if
 
     !-------------------------------------------------------
     ! Initialize rtm_trstr

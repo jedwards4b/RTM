@@ -60,7 +60,9 @@ module RtmTimeManager
       stop_ymd      = uninit_int,  &! stopping date for run in yearmmdd format
       stop_tod      = 0,           &! stopping time of day for run in seconds
       ref_ymd       = uninit_int,  &! reference date for time coordinate in yearmmdd format
-      ref_tod       = 0             ! reference time of day for time coordinate in seconds
+      ref_tod       = 0,           &  ! reference time of day for time coordinate in seconds
+      curr_ymd       = uninit_int,  &! current date for time coordinate in yearmmdd format
+      curr_tod       = 0             ! current time of day for time coordinate in seconds
    type(ESMF_Calendar), target, save  :: &
         tm_cal       ! calendar
    type(ESMF_Clock), save :: &
@@ -75,6 +77,7 @@ module RtmTimeManager
       rst_ref_tod   = uninit_int,  &! reference time of day
       rst_curr_ymd  = uninit_int,  &! current date
       rst_curr_tod  = uninit_int    ! current time of day
+   
    character(len=ESMF_MAXSTR), save :: &
    rst_calendar    ! Calendar
 
@@ -94,7 +97,7 @@ contains
 !=========================================================================================
 
 subroutine timemgr_setup( calendar_in, start_ymd_in, start_tod_in, ref_ymd_in, &
-                          ref_tod_in,  stop_ymd_in,  stop_tod_in,  nelapse_in)
+                          ref_tod_in,  curr_ymd_in, curr_tod_in, stop_ymd_in,  stop_tod_in,  nelapse_in)
 
   ! set time manager startup values
   character(len=*), optional, intent(IN) :: calendar_in       ! Calendar type
@@ -105,6 +108,8 @@ subroutine timemgr_setup( calendar_in, start_ymd_in, start_tod_in, ref_ymd_in, &
   integer         , optional, intent(IN) :: ref_tod_in        ! Reference time of day (sec)
   integer         , optional, intent(IN) :: stop_ymd_in       ! Stop date        (YYYYMMDD)
   integer         , optional, intent(IN) :: stop_tod_in       ! Stop time of day (sec)
+  integer         , optional, intent(IN) :: curr_ymd_in       ! Current date        (YYYYMMDD)
+  integer         , optional, intent(IN) :: curr_tod_in       ! Current time of day (sec)
   character(len=*), parameter :: sub = 'rtm::set_timemgr_init'
 
   ! timemgr_set is called in timemgr_init and timemgr_restart
@@ -118,6 +123,8 @@ subroutine timemgr_setup( calendar_in, start_ymd_in, start_tod_in, ref_ymd_in, &
   if (present(ref_tod_in)  ) ref_tod   = ref_tod_in
   if (present(stop_ymd_in) ) stop_ymd  = stop_ymd_in
   if (present(stop_tod_in) ) stop_tod  = stop_tod_in
+  if (present(curr_ymd_in) ) curr_ymd  = curr_ymd_in
+  if (present(curr_tod_in) ) curr_tod  = curr_tod_in
   if (present(nelapse_in)  ) nelapse   = nelapse_in
 
 end subroutine timemgr_setup
@@ -160,9 +167,9 @@ subroutine timemgr_init( dtime_in )
   end if
   start_date = TimeSetymd( start_ymd, start_tod, "start_date" )
 
-  ! Initialize current date
-  curr_date = start_date
+  curr_date = TimeSetymd( curr_ymd, curr_tod, "curr_date")
 
+  
   ! Initalize stop date.
   stop_date = TimeSetymd( 99991231, stop_tod, "stop_date" )
 

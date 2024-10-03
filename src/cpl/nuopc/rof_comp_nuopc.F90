@@ -388,7 +388,7 @@ contains
          timeStep=timeStep, rc=rc)
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call ESMF_TimeGet( currTime, yy=yy, mm=mm, dd=dd, s=curr_tod, rc=rc )
+    call ESMF_TimeGet( currTime, calkindflag=esmf_caltype, yy=yy, mm=mm, dd=dd, s=curr_tod, rc=rc )
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_cal_ymd2date(yy,mm,dd,curr_ymd)
 
@@ -403,9 +403,6 @@ contains
     call ESMF_TimeGet( refTime, yy=yy, mm=mm, dd=dd, s=ref_tod, rc=rc )
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     call shr_cal_ymd2date(yy,mm,dd,ref_ymd)
-
-    call ESMF_TimeGet( currTime, calkindflag=esmf_caltype, rc=rc )
-    if (ChkErr(rc,__LINE__,u_FILE_u)) return
 
     if (esmf_caltype == ESMF_CALKIND_NOLEAP) then
        calendar = shr_cal_noleap
@@ -426,7 +423,9 @@ contains
          ref_ymd_in=ref_ymd, &
          ref_tod_in=ref_tod, &
          stop_ymd_in=stop_ymd, &
-         stop_tod_in=stop_tod)
+         stop_tod_in=stop_tod, &
+         curr_ymd_in=curr_ymd, &
+         curr_tod_in=curr_tod)
 
     !----------------------
     ! Read namelist, grid and surface data

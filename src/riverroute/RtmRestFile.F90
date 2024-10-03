@@ -9,7 +9,7 @@ module RtmRestFile
 ! Reads from or writes to/ the RTM restart file.
 !
 ! !USES:
-  use shr_kind_mod  , only : r8 => shr_kind_r8, CL=shr_kind_cl
+  use shr_kind_mod  , only : r8 => shr_kind_r8, CL => shr_kind_cl
   use shr_sys_mod   , only : shr_sys_abort
   use RtmSpmd       , only : masterproc
   use RtmVar        , only : rtmlon, rtmlat, iulog, inst_suffix, rpntfil, &
@@ -236,7 +236,7 @@ contains
 
   subroutine restFile_read_pfile( pnamer )
     use mpi, only : MPI_CHARACTER
-    use rtm_vars, only : mpicom_rof
+    use rtmspmd, only : mpicom_rof
     ! !DESCRIPTION:
     ! Setup restart file and perform necessary consistency checks
 
@@ -268,9 +268,10 @@ contains
        locfn = './'// trim(rpntfil)//trim(inst_suffix)//timestamp
        inquire(file=trim(locfn),exist=exists)
        if(.not. exists) then
+          write(iulog,*) 'INFO: Restart pointer file: ', trim(locfn), ' not found.'
           locfn = './'// trim(rpntfil)//trim(inst_suffix)
+          write(iulog,*) 'Reading restart pointer file: ', trim(locfn)
        endif
-       write(iulog,*) 'Reading restart pointer file: ', trim(locfn)
        call opnfil (locfn, nio, 'f')
        read (nio,'(a256)') pnamer
        call relavu (nio)
