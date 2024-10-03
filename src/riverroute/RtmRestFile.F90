@@ -9,7 +9,7 @@ module RtmRestFile
 ! Reads from or writes to/ the RTM restart file.
 !
 ! !USES:
-  use shr_kind_mod  , only : r8 => shr_kind_r8
+  use shr_kind_mod  , only : r8 => shr_kind_r8, CL=shr_kind_cl
   use shr_sys_mod   , only : shr_sys_abort
   use RtmSpmd       , only : masterproc
   use RtmVar        , only : rtmlon, rtmlat, iulog, inst_suffix, rpntfil, &
@@ -235,7 +235,8 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine restFile_read_pfile( pnamer )
-
+    use mpi, only : MPI_CHARACTER
+    use rtm_vars, only : mpicom_rof
     ! !DESCRIPTION:
     ! Setup restart file and perform necessary consistency checks
 
@@ -248,6 +249,10 @@ contains
     integer :: nio                ! restart unit
     integer :: status             ! substring check status
     character(len=256) :: locfn   ! Restart pointer file name
+    integer :: yr, mon, day, tod
+    character(len=17) :: timestamp
+    logical :: exists
+    integer :: ier
     !--------------------------------------------------------
 
     ! Obtain the restart file from the restart pointer file.
@@ -257,14 +262,20 @@ contains
     ! New history files are always created for branch runs.
 
     if (masterproc) then
-       write(iulog,*) 'Reading restart pointer file....'
+       nio = getavu()
+       call get_curr_date(yr, mon, day, tod)
+       write(timestamp,'(".",i4.4,"-",i2.2,"-",i2.2,"-",i5.5)'),yr,mon,day,tod
+       locfn = './'// trim(rpntfil)//trim(inst_suffix)//timestamp
+       inquire(file=trim(locfn),exist=exists)
+       if(.not. exists) then
+          locfn = './'// trim(rpntfil)//trim(inst_suffix)
+       endif
+       write(iulog,*) 'Reading restart pointer file: ', trim(locfn)
+       call opnfil (locfn, nio, 'f')
+       read (nio,'(a256)') pnamer
+       call relavu (nio)
     endif
-
-    nio = getavu()
-    locfn = './'// trim(rpntfil)//trim(inst_suffix)
-    call opnfil (locfn, nio, 'f')
-    read (nio,'(a256)') pnamer
-    call relavu (nio)
+    call mpi_bcast (pnamer, CL, MPI_CHARACTER, 0, mpicom_rof, ier)
 
     if (masterproc) then
        write(iulog,*) 'Reading restart data.....'
@@ -276,7 +287,7 @@ contains
 !-----------------------------------------------------------------------
 
   subroutine restFile_write_pfile( fnamer )
-
+    
     ! !DESCRIPTION:
     ! Open restart pointer file. Write names of current netcdf restart file.
     !
@@ -288,15 +299,19 @@ contains
     integer :: m                    ! index
     integer :: nio                  ! restart pointer file
     character(len=256) :: filename  ! local file name
+    integer :: yr, mon, day, tod
+    character(len=17) :: timestamp
 
     if (masterproc) then
+       call get_curr_date(yr, mon, day, tod)
+       write(timestamp,'(".",i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr, mon, day, tod
+       filename= './'// trim(rpntfil)//trim(inst_suffix)//timestamp
        nio = getavu()
-       filename= './'// trim(rpntfil)//trim(inst_suffix)
        call opnfil( filename, nio, 'f' )
 
        write(nio,'(a)') fnamer
        call relavu( nio )
-       write(iulog,*)'Successfully wrote local restart pointer file'
+       write(iulog,*)'Successfully wrote local restart pointer file: ',trim(filename)
     end if
 
   end subroutine restFile_write_pfile
